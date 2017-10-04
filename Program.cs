@@ -32,7 +32,6 @@ namespace RLE
             List<byte> packedArray = new List<byte>();
             int i = 0;
             int count;
-            bool match;
 
             while (i < unpackedArray.Count)
             {
