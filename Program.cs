@@ -10,11 +10,24 @@ namespace RLE
     {
         static void Main(string[] args)
         {
-            List<byte> myArray = new List<byte> { 0, 0, 0, 0, 4, 0, 5, 6, 4, 4, 4, 4, 5, 8, 8, 8, 9, 9, 9 };
+            List<byte> myArray = new List<byte> { 0, 0, 0, 0, 4, 0, 5, 6, 4, 4, 4, 4, 5, 8, 8, 8 };
+
+            for (int i = 0; i < 255; i++)
+            {
+                myArray.Add(3);
+            }
+
+            for (int i = 0; i < 100; i++)
+            {
+                myArray.Add(1);
+                myArray.Add(2);
+            }
+
             List<byte> outArray = Pack(myArray);
+
             foreach (var c in outArray)
             {
-                Console.WriteLine(c);
+                Console.Write("/{0:X}", c);
             }
             Console.ReadLine();
         }
@@ -27,40 +40,55 @@ namespace RLE
             }
         }
 
+        private static void AddKeyByte(List<byte> packedArray, ref int keyIndex)
+        {
+            packedArray.Add(0);
+            keyIndex = packedArray.Count - 1;
+        }
+
         static List<byte> Pack(List<byte> unpackedArray)
         {
-            List<byte> packedArray = new List<byte>(); // массив запакованных данных
-            int i = 0; // позиция в "незапакованном" массиве
-            byte count; // количество "повторяющихся" элементов
-            int keyIndex = 0; // индекс ключевого байта
-            packedArray.Add(0); // добавляем первый ключевой байт
+            List<byte> packedArray = new List<byte>(); 
+            int i = 0; 
+            byte count; 
+            int keyIndex = 0;
+            AddKeyByte(packedArray, ref keyIndex);
             while (i < unpackedArray.Count)
             {
-                count = 1; //пока у нас один элемент в "повторяющейся" последовательности
-                while (true) //цикл, чтобы сосчитать сколько повторяющихся элементов у нас есть
+                count = 1; 
+                while (true) 
                 {
-                    if (i + count > unpackedArray.Count - 1 || count >= 0x80) // необходимые условия на переполнение и на все остальное 
+                    if (i + count > unpackedArray.Count - 1 || count >= 0x80) 
                         break;
                     if (unpackedArray[i] == unpackedArray[i + count])
                     {
                         count++;
                     }
-                    else //если повторяющихся элементов больше нет, то выходим из цикла
+                    else 
                         break;
                 }
-                if (count > 2) //если у нас последовательность потовряющихся элементов больше двух
+                if (count > 2) 
                 {
-                    packedArray.Add(count); //то записываем их количество
-                    packedArray.Add(unpackedArray[i]); //и записываем значение самого эелемента
-                    packedArray[keyIndex] = count;
-                    packedArray.Add(0);
-                    keyIndex = packedArray.Count - 1;
+                    packedArray.Add(unpackedArray[i]); 
+                    if (packedArray[keyIndex] > 0x80)
+                        AddKeyByte(packedArray, ref keyIndex);
+                    else
+                        packedArray[keyIndex] = count;
+                    if (i + count < unpackedArray.Count - 1)
+                        AddKeyByte(packedArray, ref keyIndex);
                 }
                 else
                 {
-                    InsertElements(packedArray, unpackedArray, i, count); // если в последовательности два элемента и меньше, то просто последовательно записываем
+                    count = 1;
+                    if (((packedArray[keyIndex] + count) & 0x7F) > 0x7E)
+                    {
+                        AddKeyByte(packedArray, ref keyIndex);
+                    }
+                    packedArray.Add(unpackedArray[i]);
+                    packedArray[keyIndex] = (packedArray[keyIndex] > 0x80) ? (byte)(packedArray[keyIndex] + count) : (byte)(0x80 + count);
+
                 }
-                i += count; //продвигаемся по массиву дальше на длинну повторяющейся последовательности
+                i += count; 
             }
             packedArray.Add(255);
             return packedArray;
