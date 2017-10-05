@@ -10,34 +10,15 @@ namespace RLE
     {
         static void Main(string[] args)
         {
-            List<byte> myArray = new List<byte> { 0, 0, 0, 0, 4, 0, 5, 6, 4, 4, 4, 4, 5, 8, 8, 8 };
+            List<byte> myArray = new List<byte> { 4, 0, 0x84, 4, 0, 5, 6, 4, 4, 0x81, 5, 3, 8, 0xFF };
 
-            for (int i = 0; i < 255; i++)
-            {
-                myArray.Add(3);
-            }
-
-            for (int i = 0; i < 100; i++)
-            {
-                myArray.Add(1);
-                myArray.Add(2);
-            }
-
-            List<byte> outArray = Pack(myArray);
+            List<byte> outArray = Unpack(myArray);
 
             foreach (var c in outArray)
             {
                 Console.Write("/{0:X}", c);
             }
             Console.ReadLine();
-        }
-
-        private static void InsertElements(List<byte> packedArray, List<byte> unpackedArray, int index, int count)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                packedArray.Add(unpackedArray[index + i]);
-            }
         }
 
         private static void AddKeyByte(List<byte> packedArray, ref int keyIndex)
@@ -48,28 +29,28 @@ namespace RLE
 
         static List<byte> Pack(List<byte> unpackedArray)
         {
-            List<byte> packedArray = new List<byte>(); 
-            int i = 0; 
-            byte count; 
+            List<byte> packedArray = new List<byte>();
+            int i = 0;
+            byte count = 0;
             int keyIndex = 0;
             AddKeyByte(packedArray, ref keyIndex);
             while (i < unpackedArray.Count)
             {
-                count = 1; 
-                while (true) 
+                count = 1;
+                while (true)
                 {
-                    if (i + count > unpackedArray.Count - 1 || count >= 0x80) 
+                    if (i + count > unpackedArray.Count - 1 || count >= 0x80)
                         break;
                     if (unpackedArray[i] == unpackedArray[i + count])
                     {
                         count++;
                     }
-                    else 
+                    else
                         break;
                 }
-                if (count > 2) 
+                if (count > 2)
                 {
-                    packedArray.Add(unpackedArray[i]); 
+                    packedArray.Add(unpackedArray[i]);
                     if (packedArray[keyIndex] > 0x80)
                         AddKeyByte(packedArray, ref keyIndex);
                     else
@@ -88,10 +69,39 @@ namespace RLE
                     packedArray[keyIndex] = (packedArray[keyIndex] > 0x80) ? (byte)(packedArray[keyIndex] + count) : (byte)(0x80 + count);
 
                 }
-                i += count; 
+                i += count;
             }
             packedArray.Add(255);
             return packedArray;
+        }
+
+        static List<byte> Unpack(List<byte> packedArray)
+        {
+            List<byte> unpackedArray = new List<byte>();
+            int i = 0;
+            int count = 0;
+            while (packedArray[i] != 0xFF)
+            {
+                count = (packedArray[i] > 0x80) ? packedArray[i] - 0x80 : packedArray[i];
+                i++;
+                if (packedArray[i - 1] > 0x80)
+                {
+                    for (int j = 0; j < count; j++)
+                    {
+                        unpackedArray.Add(packedArray[i + j]);
+                    }
+                    i += count;
+                }
+                else
+                {
+                    for (int j = 0; j < count ; j++)
+                    {
+                        unpackedArray.Add(packedArray[i]);
+                    }
+                    i++;
+                }
+            }
+            return unpackedArray;
         }
     }
 }
