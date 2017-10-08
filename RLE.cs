@@ -7,97 +7,76 @@ using System.Threading.Tasks;
 
 namespace RLE_program
 {
-    public class RLE
+    public static class RLE
     {
-        private string _pathOpen;
-        private string _pathSave;
-        private int _begin;
-
-        public string PathOpen
-        {
-            get { return _pathOpen; }
-            set { _pathOpen = value; }
-        }
-        public string PathSave
-        {
-            get { return _pathSave; }
-            set { _pathSave = value; }
-        }
-        public int Begin
-        {
-            get { return _begin; }
-            set { _begin = value; }
-        }
-
-        public RLE() : this("", "", 0) { }
-        public RLE(string pathOpen, string pathSave) : this(pathOpen, pathSave, 0) { }
-        public RLE(string pathOpen, string pathSave, int begin)
-        {
-            PathOpen = pathOpen;
-            PathSave = pathSave;
-            Begin = begin;
-        }
-
-        private void AddKeyByte(List<byte> packedArray, ref int keyIndex)
+        private static void AddKeyByte(List<byte> packedArray, ref int keyIndex)
         {
             packedArray.Add(0);
             keyIndex = packedArray.Count - 1;
         }
 
-        private List<byte> _pack(List<byte> unpackedArray)
+        private static List<byte> _pack(List<byte> unpackedArray)
         {
             List<byte> packedArray = new List<byte>();
-            int i = 0;
-            byte count = 0;
-            int keyIndex = 0;
-            AddKeyByte(packedArray, ref keyIndex);
-            while (i < unpackedArray.Count)
+            try
             {
-                count = 1;
-                while (true)
-                {
-                    if (i + count > unpackedArray.Count - 1 || count >= 0x80)
-                        break;
-                    if (unpackedArray[i] == unpackedArray[i + count])
-                    {
-                        count++;
-                    }
-                    else
-                        break;
-                }
-                if (count > 2)
-                {
-                    if (packedArray[keyIndex] > 0x80)
-                        AddKeyByte(packedArray, ref keyIndex);
-                    packedArray.Add(unpackedArray[i]);
-                    packedArray[keyIndex] = count;
-                    if (i + count < unpackedArray.Count - 1)
-                        AddKeyByte(packedArray, ref keyIndex);
-                }
-                else
+                int i = 0;
+                byte count = 0;
+                int keyIndex = 0;
+                AddKeyByte(packedArray, ref keyIndex);
+                while (i < unpackedArray.Count)
                 {
                     count = 1;
-                    if (((packedArray[keyIndex] + count) & 0x7F) > 0x7E)
+                    while (true)
                     {
-                        AddKeyByte(packedArray, ref keyIndex);
+                        if (i + count > unpackedArray.Count - 1 || count >= 0x80)
+                            break;
+                        if (unpackedArray[i] == unpackedArray[i + count])
+                        {
+                            count++;
+                        }
+                        else
+                            break;
                     }
-                    packedArray.Add(unpackedArray[i]);
-                    packedArray[keyIndex] = (packedArray[keyIndex] > 0x80) ? (byte)(packedArray[keyIndex] + count) : (byte)(0x80 + count);
+                    if (count > 2)
+                    {
+                        if (packedArray[keyIndex] > 0x80)
+                            AddKeyByte(packedArray, ref keyIndex);
+                        packedArray.Add(unpackedArray[i]);
+                        packedArray[keyIndex] = count;
+                        if (i + count < unpackedArray.Count - 1)
+                            AddKeyByte(packedArray, ref keyIndex);
+                    }
+                    else
+                    {
+                        count = 1;
+                        if (((packedArray[keyIndex] + count) & 0x7F) > 0x7E)
+                        {
+                            AddKeyByte(packedArray, ref keyIndex);
+                        }
+                        packedArray.Add(unpackedArray[i]);
+                        packedArray[keyIndex] = (packedArray[keyIndex] > 0x80) ? (byte)(packedArray[keyIndex] + count) : (byte)(0x80 + count);
 
+                    }
+                    i += count;
                 }
-                i += count;
+                packedArray.Add(0xFF);
             }
-            packedArray.Add(0xFF);
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
             return packedArray;
         }
 
-        public void Pack()
+        public static void Pack(string pathOpen, string pathSave, long begin)
         {
             try
             {
-                BinaryReader fileOpen = new BinaryReader(File.Open(PathOpen, FileMode.Open));
+                BinaryReader fileOpen = new BinaryReader(File.Open(pathOpen, FileMode.Open));
+                fileOpen.BaseStream.Seek(begin, SeekOrigin.Begin);
                 List<byte> unpackedArray = new List<byte>();
-                while (fileOpen.PeekChar() > -1)
+                while (fileOpen.BaseStream.Position < fileOpen.BaseStream.Length)
                 {
                     unpackedArray.Add(fileOpen.ReadByte());
                 }
@@ -105,7 +84,7 @@ namespace RLE_program
 
                 List<byte> packedArray = _pack(unpackedArray);
 
-                BinaryWriter fileSave = new BinaryWriter(File.Open(PathSave, FileMode.Create));
+                BinaryWriter fileSave = new BinaryWriter(File.Open(pathSave, FileMode.Create));
                 foreach (var c in packedArray)
                 {
                     fileSave.Write(c);
@@ -119,57 +98,61 @@ namespace RLE_program
             }
         }
 
-        private List<byte> _unpack(List<byte> packedArray)
+        private static List<byte> _unpack(string pathOpen, long begin)
         {
             List<byte> unpackedArray = new List<byte>();
-            int i = 0;
-            int count = 0;
-            while (packedArray[i] != 0xFF)
+            try
             {
-                count = (packedArray[i] > 0x80) ? packedArray[i] - 0x80 : packedArray[i];
-                i++;
-                if (packedArray[i - 1] > 0x80)
+                BinaryReader fileOpen = new BinaryReader(File.Open(pathOpen, FileMode.Open));
+                fileOpen.BaseStream.Seek(begin, SeekOrigin.Begin);
+                byte count = 0;
+                byte value = 0;
+                do
                 {
-                    for (int j = 0; j < count; j++)
+                    count = fileOpen.ReadByte();
+                    if (count != 0xFF)
                     {
-                        unpackedArray.Add(packedArray[i + j]);
+                        if (count > 0x80)
+                        {
+                            count -= 0x80;
+                            for (int j = 0; j < count; j++)
+                            {
+                                unpackedArray.Add(fileOpen.ReadByte());
+                            }
+                        }
+                        else
+                        {
+                            value = fileOpen.ReadByte();
+                            for (int j = 0; j < count; j++)
+                            {
+                                unpackedArray.Add(value);
+                            }
+                        }
                     }
-                    i += count;
-                }
-                else
-                {
-                    for (int j = 0; j < count; j++)
-                    {
-                        unpackedArray.Add(packedArray[i]);
-                    }
-                    i++;
-                }
+                } while (count != 0xFF);
+                fileOpen.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
             return unpackedArray;
         }
 
-        public void Unpack()
+        public static void Unpack(string pathOpen, string pathSave, long begin)
         {
             try
             {
-                BinaryReader fileOpen = new BinaryReader(File.Open(PathOpen, FileMode.Open));
-                fileOpen.BaseStream.Seek(Begin, SeekOrigin.Begin);
-                List<byte> packedArray = new List<byte>();
-                do
-                {
-                    packedArray.Add(fileOpen.ReadByte());
-                } while (packedArray[packedArray.Count - 1] != 0xFF);
-                fileOpen.Close();
+                List<byte> unpackedArray = _unpack(pathOpen, begin);
 
-                List<byte> unpackedArray = _unpack(packedArray);
-
-                BinaryWriter fileSave = new BinaryWriter(File.Open(PathSave, FileMode.Create));
+                BinaryWriter fileSave = new BinaryWriter(File.Open(pathSave, FileMode.Create));
                 foreach (var c in unpackedArray)
                 {
                     fileSave.Write(c);
                 }
                 fileSave.Close();
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.Write(ex.Message);
             }

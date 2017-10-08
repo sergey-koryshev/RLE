@@ -11,28 +11,46 @@ namespace RLE_program
     {
         static void Main(string[] args)
         {
-            //List<byte> myArray = new List<byte> { 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 4, 4, 3, 4, 5, 4, 3, 4, 5, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+            try
+            {
+                string method;
+                string pathOpen;
+                string pathSave;
+                long begin = 0;
+                if (args.Length >= 3 && args.Length <= 4)
+                {
+                    method = args[0];
+                    pathOpen = args[1];
+                    pathSave = args[2];
+                    if (args.Length == 4)
+                        begin = long.Parse(args[3]);
+                }
+                else
+                    throw new ApplicationException("You entered incorrect count of parameters for packing/unpacking.");
 
-            RLE myFile = new RLE(@"E:\unpacked.hz", @"E:\packed.hz");
-
-            //myFile.Pack();
-
-            RLE myFile2 = new RLE(@"E:\packed.hz", @"E:\unpacked1.hz");
-
-            myFile2.Unpack();
-
-
-
-            //BinaryWriter myFile = new BinaryWriter(File.Open(@"E:\data.hz", FileMode.CreateNew));
-
-            //foreach (var c in myArray)
-            //{
-            //    myFile.Write(c);
-            //}
-
-            Console.ReadLine();
+                if (method == "p")
+                {
+                    RLE.Pack(pathOpen, pathSave, begin);
+                }
+                else if (method == "u")
+                {
+                    RLE.Unpack(pathOpen, pathSave, begin);
+                }
+                else
+                {
+                    throw new ApplicationException("You entered incorrect method of the program.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            finally
+            {
+                Console.ReadLine();
+            }
         }
 
-        
+
     }
 }
