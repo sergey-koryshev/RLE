@@ -91,6 +91,8 @@ namespace RLE_program
                 }
                 fileSave.Close();
 
+                Console.WriteLine("Compressing was success! Source data takes {0} bytes, compressed data takes {1} bytes.", unpackedArray.Count, packedArray.Count);
+
             }
             catch (Exception ex)
             {
@@ -98,13 +100,15 @@ namespace RLE_program
             }
         }
 
-        private static List<byte> _unpack(string pathOpen, long begin)
+        private static List<byte> _unpack(string pathOpen, long begin, out long packedCount)
         {
             List<byte> unpackedArray = new List<byte>();
+            packedCount = 0;
             try
             {
                 BinaryReader fileOpen = new BinaryReader(File.Open(pathOpen, FileMode.Open));
                 fileOpen.BaseStream.Seek(begin, SeekOrigin.Begin);
+                
                 byte count = 0;
                 byte value = 0;
                 do
@@ -119,6 +123,7 @@ namespace RLE_program
                             {
                                 unpackedArray.Add(fileOpen.ReadByte());
                             }
+                            packedCount += count + 1;
                         }
                         else
                         {
@@ -127,6 +132,7 @@ namespace RLE_program
                             {
                                 unpackedArray.Add(value);
                             }
+                            packedCount += 2;
                         }
                     }
                 } while (count != 0xFF);
@@ -143,7 +149,8 @@ namespace RLE_program
         {
             try
             {
-                List<byte> unpackedArray = _unpack(pathOpen, begin);
+                long packedCount;
+                List<byte> unpackedArray = _unpack(pathOpen, begin, out packedCount);
 
                 BinaryWriter fileSave = new BinaryWriter(File.Open(pathSave, FileMode.Create));
                 foreach (var c in unpackedArray)
@@ -151,6 +158,8 @@ namespace RLE_program
                     fileSave.Write(c);
                 }
                 fileSave.Close();
+
+                Console.WriteLine("Uncompressing was success! Source data takes {0} bytes, uncompressed data takes {1} bytes.", packedCount, unpackedArray.Count);
             }
             catch (Exception ex)
             {

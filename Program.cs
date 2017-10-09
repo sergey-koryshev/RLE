@@ -26,7 +26,7 @@ namespace RLE_program
                         begin = long.Parse(args[3]);
                 }
                 else
-                    throw new ApplicationException("You entered incorrect count of parameters for packing/unpacking.");
+                    throw new ApplicationException("You entered incorrect count of arguments for packing/unpacking.");
 
                 if (method == "p")
                 {
