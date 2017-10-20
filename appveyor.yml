@@ -8,8 +8,13 @@ build:
 test_script:
 - cmd: >-
     mkdir Results
+    
     cd bin\Debug\
+    
     RLE p ..\..\Test\unpacked.nes ..\..\Results\packed.nes
+    
     RLE u ..\..\Test\packed.nes ..\..\Results\unpacked.nes
+    
     FC /B ..\..\Test\unpacked.nes ..\..\Results\unpacked.nes
+    
     FC /B ..\..\Test\packed.nes ..\..\Results\packed.nes
