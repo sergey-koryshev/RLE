@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/kc45ibad8ce19c3q?svg=true)](https://ci.appveyor.com/project/Ace-Lightning/rle)
+
 # RLE packer/unpacker
 Программа запаковывает или распаковывает данные для игры "Double Dribble", которая вышла в 1987 году на платформе NES.
 
