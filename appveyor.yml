@@ -6,4 +6,4 @@ build:
   project: RLE.sln
   verbosity: minimal
 test_script:
-- cmd: RLE.exe u
+- cmd: cd
