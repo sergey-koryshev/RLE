@@ -5,3 +5,5 @@ clone_folder: C:\projects\
 build:
   project: RLE.sln
   verbosity: minimal
+test_script:
+- cmd: RLE.exe u
