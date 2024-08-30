@@ -33,4 +33,4 @@
 *Если в вашем пути содержатся пробелы, то заключайте путь в двойные кавычки.*
 
 Пример работы с программой:
-> RLE.exe "C:\My Files\fileOpen.nes" C:\fileSave.nes 0x3FC
+> RLE.exe u "C:\My Files\fileOpen.nes" C:\fileSave.nes 0x3FC
